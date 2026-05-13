@@ -85,6 +85,15 @@ export default function AdminDevlog() {
     setLoading(true)
     setSuccessMessage('')
 
+    const requestBody = {
+      title,
+      content,
+      features: features.split(',').map(f => f.trim()).filter(f => f),
+      date: new Date().toISOString(),
+    }
+    console.log('[devlog] POST body:', requestBody)
+    console.log('[devlog] Headers: Content-Type=application/json, x-admin-token=devlog-secure-token-12345')
+
     try {
       const response = await fetch('/api/devlogs', {
         method: 'POST',
@@ -92,16 +101,14 @@ export default function AdminDevlog() {
           'Content-Type': 'application/json',
           'x-admin-token': 'devlog-secure-token-12345',
         },
-        body: JSON.stringify({
-          title,
-          content,
-          features: features.split(',').map(f => f.trim()).filter(f => f),
-          date: new Date().toISOString(),
-        }),
+        body: JSON.stringify(requestBody),
       })
+
+      console.log('[devlog] Response status:', response.status, response.statusText)
 
       if (response.ok) {
         const created = await response.json()
+        console.log('[devlog] Created:', created)
         setSuccessMessage('Devlog posted successfully!')
         setTitle('')
         setContent('')
@@ -109,11 +116,13 @@ export default function AdminDevlog() {
         setExistingDevlogs(prev => [created, ...prev])
         setTimeout(() => setSuccessMessage(''), 3000)
       } else {
+        const errorBody = await response.text()
+        console.error('[devlog] Error response body:', errorBody)
         setPasswordError('Failed to post devlog')
       }
     } catch (err) {
+      console.error('[devlog] Fetch error:', err)
       setPasswordError('Error posting devlog')
-      console.error(err)
     } finally {
       setLoading(false)
     }
